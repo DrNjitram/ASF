@@ -1,5 +1,5 @@
 function subimages = readtiffstack(filename)
-% Read a multipage tiff, assuming each file is the same size
+    % Read a multipage tiff, assuming each file is the same size
     t = Tiff(filename, 'r');
     subimages(:,:,1) = t.read(); % Read the first image to get the array dimensions correct.
     if t.lastDirectory()
