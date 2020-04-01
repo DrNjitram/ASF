@@ -43,7 +43,7 @@ fprintf('\n');
 MT = [];
 
 for i = 1:num_images
-    MT = [MT; r{i}(:,1), r{i}(:,2), ones(length(r{i}(:,1)), 1)*frametime*i];
+    MT = [r{i}(:,1), r{i}(:,2), ones(length(r{i}(:,1)), 1)*frametime*i; MT];
 end
 
 % Save created matrix 
