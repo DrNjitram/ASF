@@ -4,10 +4,11 @@ addpath('Code_2D_feature_finding')
 addpath('own_scripts')  
 
 % Global variables
-framerate = 1; % Unknown what framerate actually is
-frametime = 1/framerate;
+frametime = 4.2; %s
 FOV = 1; % Unknown 
+basepath = 'D:\Uni\ASM\';
 featsize = 3; 
+Imin = 3000;
 create_intermediate_graphs = true;
 
 % Define filename
@@ -35,7 +36,7 @@ for i = 1:num_images
     fprintf(repmat('\b',1,linelength));
     linelength = fprintf('%d of %d', i, num_images);
     
-    r{i} = feature2D(images(:, :, i),1,featsize,3000);
+    r{i} = feature2D(images(:, :, i),1,featsize,Imin);
 end
 fprintf('\n');
 
@@ -43,13 +44,16 @@ fprintf('\n');
 MT = [];
 
 for i = 1:num_images
-    MT = [r{i}(:,1), r{i}(:,2), ones(length(r{i}(:,1)), 1)*frametime*i; MT];
+    MT = [MT; r{i}(:,1), r{i}(:,2), ones(length(r{i}(:,1)), 1)*frametime*(i-1)];
 end
 
 % Save created matrix 
-if ~exist('Feature_finding', 'dir') mkdir('Feature_finding'); end
+if ~exist('Feature_finding', 'dir'); mkdir('Feature_finding'); end
 addpath('Feature_finding');
-save(['Feature_finding/MT_' num2str(FOV) '_Feat_Size_' num2str(featsize) '.mat'], 'MT');
+save([basepath 'Feature_finding/MT_' num2str(FOV) '_Feat_Size_' num2str(featsize) '.mat'], 'MT');
+
+%% Tracking
+fancytrack(basepath, FOV, featsize);
 
 %% Calculate standard deviation of remainders mod 1
 remainder_x = [];
