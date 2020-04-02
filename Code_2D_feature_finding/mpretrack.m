@@ -72,7 +72,8 @@ pathout = [pathin 'Feature_finding/'];
 
 d=0;
 load([pathin 'fov' num2str(fovn) '_times.mat']);
-
+fprintf('Processing images:\nProcessing frame ');
+linelength = 0;
 for x = 1:numframes
     strnam=[pathin 'fov' num2str(fovn) '/fov' num2str(fovn) '_' num2str(x,'%04i') '.tif'];
     img=imread(strnam);
@@ -82,37 +83,34 @@ for x = 1:numframes
 
     M = feature2D(img,1,featuresize,masscut,Imin,field);
 
-    if mod(x,50) == 0
-        disp(['Frame ' num2str(x)])
-        % partway save, useful if the computer tends to crash for some
-        % reason
-%         save([pathout 'MT_' num2str(fovn) '_Feat_Size_' num2str(featuresize) '_partial.mat'] ,'MT')
-    end
+    fprintf(repmat('\b',1,linelength));
+    linelength = fprintf('%d of %d', x, numframes);
 
     [a,b]=size(M);
     
-if( b == 5 )    
+    if( b == 5 )    
 
-        %Rejection process
-    X=find(M(:,5)>barrCc);
-    M(X,1:5)=0;
-    X=find(M(:,4)>barrRg);
-    M(X,1:5)=0;
-    X=find(M(:,3)<barrI);
-    M(X,1:5)=0;
-    X=find(M(:,3)./M(:,4)<IdivRg);
-    M(X,1:5)=0;
+            %Rejection process
+        X=find(M(:,5)>barrCc);
+        M(X,1:5)=0;
+        X=find(M(:,4)>barrRg);
+        M(X,1:5)=0;
+        X=find(M(:,3)<barrI);
+        M(X,1:5)=0;
+        X=find(M(:,3)./M(:,4)<IdivRg);
+        M(X,1:5)=0;
 
-    M=M(M(:,1)~=0,:);
+        M=M(M(:,1)~=0,:);
 
-    a = length(M(:,1));
+        a = length(M(:,1));
 
-    MT(d+1:a+d, 1:5)=M(1:a,1:5);
-    MT(d+1:a+d, 6)=x;
-    MT(d+1:a+d, 7)=time(x);
-    d = length(MT(:,1));
-%    disp([num2str(a) ' features kept.'])
-end
+        MT(d+1:a+d, 1:5)=M(1:a,1:5);
+        MT(d+1:a+d, 6)=x;
+        MT(d+1:a+d, 7)=time(x);
+        d = length(MT(:,1));
+    %    disp([num2str(a) ' features kept.'])
+    end
+    
     clear img;
     clear R;
     clear M;
@@ -122,6 +120,7 @@ end
     clear i;
     clear j;
 end
+fprintf('\n');
 
 format long e;
 % if Inv == 0

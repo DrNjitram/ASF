@@ -6,10 +6,19 @@ addpath('own_scripts')
 % Global variables
 frametime = 4.2; %s
 FOV = 1; % Unknown 
-basepath = 'D:\Uni\ASM\';
+basepath = 'D:\Uni\ASM\data\';
 featsize = 3; 
-Imin = 3000;
+masscut = 3000;
 create_intermediate_graphs = true;
+
+frame = 1;
+fovn = FOV;
+
+% These variables can be used to check the quality using %[M2,MT] = mpretrack_init(basepath, featsize, barint, barrg, barcc, IdivRg, fovn, frame);
+barint = 4000;
+barrg = 4;
+barcc = 0.5;
+IdivRg = barint/barrg;
 
 % Define filename
 fname = 'data\colloids.tif';
@@ -18,7 +27,7 @@ fname = 'data\colloids.tif';
 disp("Reading Tiff");
 info = imfinfo(fname);
 num_images = numel(info);
-fprintf('Found %d frames\n',num_images);
+fprintf('Found %d frames\n\n',num_images);
 % Uncomment below line to only examine the first image
 %num_images = 1;
 
@@ -30,26 +39,26 @@ images = readtiffstack(fname);
 r = {num_images};
 
 % For each image, get the features
-fprintf('Processing images:\nProcessing frame ');
+fprintf('Finding features:\nProcessing frame ');
 linelength = 0;
 for i = 1:num_images
     fprintf(repmat('\b',1,linelength));
     linelength = fprintf('%d of %d', i, num_images);
     
-    r{i} = feature2D(images(:, :, i),1,featsize,Imin);
+    r{i} = feature2D(images{i}, fovn, featsize, masscut);
 end
-fprintf('\n');
+fprintf('\n\n');
 
 %% Construct MT for further processing
 MT = [];
 
 for i = 1:num_images
-    MT = [MT; r{i}(:,1), r{i}(:,2), ones(length(r{i}(:,1)), 1)*frametime*(i-1)];
+    MT = [MT; r{i}, ones(length(r{i}(:,1)), 1)*i, ones(length(r{i}(:,1)), 1)*frametime*(i)];
 end
 
 % Save created matrix 
-if ~exist('Feature_finding', 'dir'); mkdir('Feature_finding'); end
-addpath('Feature_finding');
+if ~exist('data/Feature_finding', 'dir'); mkdir('data/Feature_finding'); end
+addpath('data/Feature_finding');
 save([basepath 'Feature_finding/MT_' num2str(FOV) '_Feat_Size_' num2str(featsize) '.mat'], 'MT');
 
 %% Tracking
@@ -69,7 +78,7 @@ if create_intermediate_graphs
     % Frame to display
     no = 1;
     figure
-    imshow(images(:, :, no), [0, max(max(images(:, :, no)))]);
+    imshow(images{i}, [0, max(max(images{i}))]);
     hold on
     plot(r{no}(:,1), r{no}(:,2), '.');
 

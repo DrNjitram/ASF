@@ -19,7 +19,7 @@ dd = length(xyzs(1,:));
 t = (xyzs(:,dd-1))';  
 %check the input time vector is ok, i.e. sorted and uniform
 st_t=circshift(t,[0,1]);
-for i = 2:length(t), st(i-1) = t(i)-st_t(i);, end
+for i = 2:length(t), st(i-1) = t(i)-st_t(i); end
 %all elements of st should be equal and positive, OR ZERO
 if sum(st<0)~=0, warning('ERROR - Time vector out of order!'), end
 w = find(st>0);  
@@ -90,6 +90,8 @@ if notnsqrd
 end
 
 %   Start the main loop over the frames.
+fprintf('Tracking features:\nProcessing frame ');
+linelength = 0;
 for i=istart+1:z %always starts at 2 (while inipos not implemented) 
     ispan = mod (i-1,zspan)+1;
 
@@ -625,20 +627,22 @@ for i=istart+1:z %always starts at 2 (while inipos not implemented)
         dumphash = zeros(1,nkeep);
         if goodenough > 0, nvalid = nvalid(wkeep); end
     end
-
+    fprintf(repmat('\b',1,linelength));
+    linelength = fprintf('%d of %d', i, z);
 end     % the big loop over z time steps....
+fprintf('\n\n');
 
 %   %  make a final scan for short trajectories that weren't lost at the end.
-   if goodenough > 0
-      nvalid = sum(bigresx > 0);
-      wkeep = find( nvalid >= goodenough); nkeep = length(wkeep);
-      if nkeep < n
-         bigresx = bigresx(:,wkeep);
-         n = nkeep;
-         uniqid = uniqid(wkeep);
-         pos = pos(wkeep,:);
-      end
-   end
+if goodenough > 0
+  nvalid = sum(bigresx > 0);
+  wkeep = find( nvalid >= goodenough); nkeep = length(wkeep);
+  if nkeep < n
+     bigresx = bigresx(:,wkeep);
+     n = nkeep;
+     uniqid = uniqid(wkeep);
+     pos = pos(wkeep,:);
+  end
+end
 
 %  make the final scan to 'pull' everybody else into the olist.
 
