@@ -24,4 +24,4 @@ IdivRg = barint/barrg;
 
 mpretrack( basepath, fovn, featsize, barint, barrg, barcc, IdivRg, numframes);
 
-fancytrack(basepath, FOV, featsize);
+fancytrack(basepath, FOV, featsize, 2, 70, 1);

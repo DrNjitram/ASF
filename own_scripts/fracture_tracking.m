@@ -53,7 +53,7 @@ addpath('Feature_finding');
 save([basepath 'Feature_finding/MT_' num2str(FOV) '_Feat_Size_' num2str(featsize) '.mat'], 'MT');
 
 %% Tracking
-fancytrack(basepath, FOV, featsize);
+fancytrack(basepath, FOV, featsize, 2, 70, 1);
 
 %% Calculate standard deviation of remainders mod 1
 remainder_x = [];
