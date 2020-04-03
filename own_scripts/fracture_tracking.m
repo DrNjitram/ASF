@@ -1,12 +1,12 @@
 clear variables
 %add paths
-addpath('Code_2D_feature_finding')  
-addpath('own_scripts')  
+addpath('own_scripts');  
 
 % Global variables
 frametime = 4.2; %s
 FOV = 1; % Unknown 
-basepath = 'D:\Uni\ASM\data\';
+basepath = [pwd '\data\'];
+addpath([pwd '\Code_2D_feature_finding\']);
 featsize = 3; 
 masscut = 3000;
 create_intermediate_graphs = true;
@@ -21,7 +21,7 @@ barcc = 0.5;
 IdivRg = barint/barrg;
 
 % Define filename
-fname = 'data\colloids.tif';
+fname = [basepath 'colloids.tif'];
 
 % Get tiff information
 disp("Reading Tiff");

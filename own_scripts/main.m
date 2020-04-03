@@ -3,7 +3,8 @@ clear variables
 % Global variables
 frametime = 4.2; %s
 FOV = 1; % Unknown 
-basepath = 'D:\Uni\ASM\data\';
+basepath = [pwd '\data\'];
+addpath([pwd '\Code_2D_feature_finding\']);
 frametimes = 4.2; %s
 numframes = 79;
 
