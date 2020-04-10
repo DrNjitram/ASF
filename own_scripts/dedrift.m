@@ -43,12 +43,12 @@ for i = 1:maxFOV
         corMeanX(1) = 0;
         corMeanY(1) = 0;
     else
-        corMeanX(i) = meanX(i)-meanX(i-1); %subtracts average position of the frame before from the average position of a frame.
-        corMeanY(i) = meanY(i)-meanY(i-1); %same as above but for Y
+        corMeanX(i) = meanX(i)-meanX(1); %subtracts average position of the frame before from the average position of a frame.
+        corMeanY(i) = meanY(i)-meanY(1); %same as above but for Y
     end
     
-    corMatrix(minRow:maxRow,1) = sum(corMeanX(1:i)); %puts the x-values we use for correction at the correct place
-    corMatrix(minRow:maxRow,2) = sum(corMeanY(1:i)); %same as above for y-values
+    corMatrix(minRow:maxRow,1) = corMeanX(i); %puts the x-values we use for correction at the correct place
+    corMatrix(minRow:maxRow,2) = corMeanY(i); %same as above for y-values
 end
 
 corSortFOV = [sortFOV(:,1:2)- corMatrix(:,1:2),sortFOV(:,3:4)]; %subtracts the correction value from the original positions to give the drift corrected positions
