@@ -98,92 +98,92 @@ end
 % CONCERNING MATRIX FORMAT
 
 % OUTPUT
-
-% The function outputs an array called 'allDeltas' which contains the
-% displacement between frames for every beadID ADD MORE DETAILS CONCERNING
-% MATRIX FORMAT
 % 
 % 
 
-%load relevant data file
-load('res_fov1.mat')
-% create useful matrices
-allDeltas = zeros(1,4);
-res_yes = [res(:,1),res(:,2),res(:,6),res(:,8)];
 
-% Selecting beadIDs The first loop goes through all beadIDs and creates a
-% new array  per bead containing only the positions for the relevant bead
-% and adds data calculated in the second loop to allData.
-for i = 1:max(res_yes(:,4))
-    rows = find(res_yes(:,4)==i);
-    FOV = length(rows);
-    lastRow = max(rows);
-    firstRow = min(rows);
-    XY = res_yes(firstRow:lastRow,1:2);
-    deltaXY = zeros(FOV-1,3);
-    % Selecting all frames for current beadID The second loop calculates
-    % the displacement between every subsequent frame.
-    for j = 1:length(XY)-1 
-        deltaXY(j,1:2) = XY(j+1,1:2) - XY(j,1:2);
-        deltaXY(j,3) = j; % adds dFOV
-    end
-    beadID = ones(FOV-1,1)*i;
-    deltaXY = [deltaXY, beadID]; % adds the beadID 
-    allDeltas = [allDeltas; deltaXY];
-    clear deltaXY
-    disp(i/max(res_yes(:,4)))
-end
-disp('done')
-%%
-% The next step is to decide on a(n average) value per dFOV to subtract
-% from the the original positions INPUT: [allDeltas] OUTPUT: []
+load('res_fov1.mat') %load relevant data file
+res_yes = [res(:,1),res(:,2),res(:,6),res(:,8)]; %remove irrelevant values
 
-sortdFOV = sortrows(allDeltas, 3);
-corValues = sortdFOV;
-maxdFOV = max(sortdFOV(:,3));
-for i = 1:maxdFOV
-    dFOV = find(sortdFOV(:,3) == i);
-    maxRow = max(dFOV);
-    minRow = min(dFOV);
-    averagedX(i) = mean(sortdFOV(minRow:maxRow,1));
-    averagedY(i) = mean(sortdFOV(minRow:maxRow,2));
-    corValues(minRow:maxRow,1) = sortdFOV(minRow:maxRow,1) - averagedX(i);
-    corValues(minRow:maxRow,2) = sortdFOV(minRow:maxRow,2) - averagedY(i);
-end
-corValues(:,3:4) = sortdFOV(:,3:4);
-corAllDeltas = sortrows(corValues,4);
-
-% Choosing a value for correction on basis of binning, e.i. choosing a
-% value because the effect of drift makes it very prevalent. This might be
-% difficult to do, so i'll leave it like this for now. The other , easier
-% option is to just take the average movement, as stated in the project
-% description.
-% for i = sortdFOV(:,3)
-%     dFOV = find(sortdFOV(:,3)==i);
-%     [X,edgesX] = histcounts(sortdFOV(dFOV,1));
-%     [Y,edgesY] = histcounts(sortdFOV(dFOV,2));
-% end
-%% drift correction based on position (according project overview
+%% drift correction based on average positions
 % INPUT: [res_yes]
 % OUTPUT: []
 
-sortFOV = sortrows(res_yes, 3);
-corValues = sortFOV;
-maxFOV = max(sortFOV(:,3));
+sortFOV = sortrows(res_yes, 3); %sorts the matrix to allow easy selection of frame i
+corMatrix = sortFOV(:,1:2); %create array to hold subtracted averages
+corMatrix(:,:) = 1;
+corMatrix(1,:) = 0;
+maxFOV = max(sortFOV(:,3)); %gives final frame for defining for loop below
 for i = 1:maxFOV
-    FOV = find(sortdFOV(:,3) == i);
+    FOV = find(sortFOV(:,3) == i); %gives vector containing every row belonging to frame i
     maxRow = max(FOV);
     minRow = min(FOV);
-    averagedX(i) = mean(sortFOV(minRow:maxRow,1));
-    averagedY(i) = mean(sortFOV(minRow:maxRow,2));
-    corValues(minRow:maxRow,1) = sortFOV(minRow:maxRow,1) - averagedX(i);
-    corValues(minRow:maxRow,2) = sortFOV(minRow:maxRow,2) - averagedY(i);
+    X = sortFOV(minRow:maxRow,1); %extracts x-values belonging to frame i
+    Y = sortFOV(minRow:maxRow,2); %same as above for y-values
+    if i ~= 1 %nothing to be subtracted from first frame
+        meanX(i) = mean(X); %calculates average x-position
+        meanY(i) = mean(Y); %calculates average Y-position
+        corMeanX = meanX(i)-meanX(i-1); %subtracts average position of the frame before from the average position of a frame.
+        corMeanY = meanY(i)-meanY(i-1); %same as above but for Y
+    end
+    corMatrix(minRow:maxRow,1) = corMatrix(minRow:maxRow,1)*corMeanX; %puts the x-values we use for correction at the correct place
+    corMatrix(minRow:maxRow,2) = corMatrix(minRow:maxRow,2)*corMeanY; %same as above for y-values
 end
-corValues(:,3:4) = sortFOV(:,3:4);
-corresYes = sortrows(corValues,4);
+corSortFOV = [sortFOV(:,1:2)- corMatrix(:,1:2),sortFOV(:,3:4)]; %subtracts the correction value from the original positions to give the drift corrected positions
+corRes_yes = sortrows(corSortFOV,4); % sorted by beadID again
 
-% Next step: subtract drift from original
+%% Next step: Show the movement plots of particles (Tom's code)
+% Plots 50 particles as a function of frame for both pre-driftcorrection
+% (figure 1) and post-driftcorrection (figure 2)
 
-% Next step: Show the original movie and drift corrected movie in a nice
-% format.
+figure(1) %pre-correction
+for m=1:50;
+    plot(res((1+(79*(m-1))):(79*m),1),res((1+(79*(m-1))):(79*m),2)); hold on;
+end
+figure(2) %post-correction
+for m=1:50;
+    plot(corRes_yes((1+(79*(m-1))):(79*m),1),corRes_yes((1+(79*(m-1))):(79*m),2)); hold on;
+end
 
+%% drift correction failures (remove if agreed upon)
+% Selecting beadIDs The first loop goes through all beadIDs and creates a
+% new array  per bead containing only the positions for the relevant bead
+% and adds data calculated in the second loop to allData.
+% for i = 1:max(res_yes(:,4))
+%     rows = find(res_yes(:,4)==i);
+%     FOV = length(rows);
+%     lastRow = max(rows);
+%     firstRow = min(rows);
+%     XY = res_yes(firstRow:lastRow,1:2);
+%     deltaXY = zeros(FOV-1,3);
+%     % Selecting all frames for current beadID The second loop calculates
+%     % the displacement between every subsequent frame.
+%     for j = 1:length(XY)-1 
+%         deltaXY(j,1:2) = XY(j+1,1:2) - XY(j,1:2);
+%         deltaXY(j,3) = j; % adds dFOV
+%     end
+%     beadID = ones(FOV-1,1)*i;
+%     deltaXY = [deltaXY, beadID]; % adds the beadID 
+%     allDeltas = [allDeltas; deltaXY];
+%     clear deltaXY
+%     disp(i/max(res_yes(:,4)))
+% end
+% disp('done')
+%%
+% The next step is to decide on a(n average) value per dFOV to subtract
+% from the the original positions INPUT: [allDeltas] OUTPUT: []
+% 
+% sortdFOV = sortrows(allDeltas, 3);
+% corValues = sortdFOV;
+% maxdFOV = max(sortdFOV(:,3));
+% for i = 1:maxdFOV
+%     dFOV = find(sortdFOV(:,3) == i);
+%     maxRow = max(dFOV);
+%     minRow = min(dFOV);
+%     averagedX(i) = mean(sortdFOV(minRow:maxRow,1));
+%     averagedY(i) = mean(sortdFOV(minRow:maxRow,2));
+%     corValues(minRow:maxRow,1) = sortdFOV(minRow:maxRow,1) - averagedX(i);
+%     corValues(minRow:maxRow,2) = sortdFOV(minRow:maxRow,2) - averagedY(i);
+% end
+% corValues(:,3:4) = sortdFOV(:,3:4);
+% corAllDeltas = sortrows(corValues,4);
