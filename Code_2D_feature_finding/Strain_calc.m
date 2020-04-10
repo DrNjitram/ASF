@@ -1,102 +1,97 @@
-function [final_nonzero, fig] = Strain_calc_tom(res)
-% under 'Bead_tracking/res_files' find the .mat file that contains all the
-% tracks. Load this.
-%load('res_fov1.mat')
-% rearrange the 'res' matrix to comply with Dmitry's format
+function [final] = Strain_calc(res)
+% Under 'Bead_tracking/res_files' find the .mat file that contains all the
+% tracks. Load this data first.
+% This code was written for 3D data and has been adapted to your 2D data
+% set
+% Most of this code is about rearranging data to consider only the
+% neightbors of the target particle from which to calculate the local
+% strain
+
+% rearrange the 'res' matrix to comply with strain calculation's format
 MTedge = [res(:,1),res(:,2),res(:,3),res(:,7),res(:,8)];
-% now go forward with his code
+% now go forward with this code
 t1=1;
+frame_time = 4.2; %change this as necessary
 incremental=1;
-%% Choose region
-cutedge_p=00;
-x_min=cutedge_p;x_max=max(MTedge(:,1))-cutedge_p;
-y_min=00;y_max=max(MTedge(:,2));
-z_min=cutedge_p;z_max=max(MTedge(:,3))-cutedge_p;
+%% Choose region of interest
+cutedge_p=0; %choose a number of pixels to ignore from the edges of the image; now set to include the entire image
+x_min=cutedge_p;
+x_max=max(MTedge(:,1))-cutedge_p;
+
+y_min=0;
+y_max=max(MTedge(:,2));
+
+z_min=cutedge_p; %There is no z value in 2D data, this will be fixed a few lines later in the code.
+%z_max=max(MTedge(:,3))-cutedge_p;
+z_max=max(MTedge(:,1))-cutedge_p; %set max to largest dimension in y, again this does not matter since we have no z-data
+
 MTtrack=MTedge; %MTedge is your initial array with x,y,z coordinates, time and particle number.
 MTtrack=MTtrack(MTtrack(:,1)>x_min&MTtrack(:,1)<x_max,:);
 MTtrack=MTtrack(MTtrack(:,2)>y_min&MTtrack(:,2)<y_max,:);
-MTtrack=MTtrack(MTtrack(:,3)>z_min&MTtrack(:,3)<z_max,:);
 
 % Modify for 2D
 MTtrack(:,3) = 1;
-max_time=max(MTtrack(:,4));
-
-%res_fig=track(MTtrack(:,1:4),6,0,max_time,3,0);
-% res_fig=res_fig_c;
-% %% Check track lenght distribution
-% A_check=[];
-% for i_n=1:max(res_fig(:,5))
-%     A_check=[A_check,size(res_fig(res_fig(:,5)==i_n),1)];
-% end
-% figure(31);hist(A_check,[0:1:max_time])
-%% Chose only the particles with full life cycle
+MTtrack(:,4) = ceil(MTtrack(:,4)./frame_time); %change the real time in second into frame number as this makes the next 50 lines easier to code in whole integers; use 'ceil' to round to next highest integer
+max_time=max(MTtrack(:,4)); %Note: MTtrack(:,4) == res(:,7)
+%% Chose only the particles with full life cycle in the chosen region
+% If you set 'goodenough' equal to the full number of frames, this code is
+% not important, but run it still as the variable names change. 
 res_t=[];
 res_fig = MTtrack;
-for i_n=1:max(res_fig(:,5))
-    if size(res_fig(res_fig(:,5)==i_n),1)>=(max_time);%-0.25*max_time)
-        res_t=[res_t;res_fig(res_fig(:,5)==i_n,:)];
+for i_n=1:max(res_fig(:,5)) %Note: res_fig(:,5) are BeadID, so i_n goes from 1 to max(BeadIDs)
+    if size(res_fig(res_fig(:,5)==i_n),1)>=(max_time); %use if to select only particles with frames = max_frame
+        res_t=[res_t;res_fig(res_fig(:,5)==i_n,:)]; %make that selection, ignore all other BeadID; store as new variable "res_t". the first part of this line that say [res(t)...] causes it to grow each loop
     end
 end
 
 
-%% Choose the same particles at different times
-p_size=40; %originally 40
-part_n=(size(res_t,1)/max_time);
-str_out=zeros(max_time,part_n,4);
-D2=zeros(max_time,part_n);
+%% Choose the same particles at different times and calculat the strain
+% this takes some time as there are many frames and many particles
+p_size=10; %average distance between neighboring particles in pixels; choose a value much greater than diameter; this is an input to the strain code
 
-for i_t=2:max_time
-    t2=i_t;
-    if incremental==1
-        res_t1=res_t(res_t(:,4)==t2-1,:);
-        res_t1(:,4:5)=[];
-    else
-        res_t1=res_t(res_t(:,4)==t1,:);
-        res_t1(:,4:5)=[];
-    end
-    %     res_t1e=res_t(res_t(:,4)==t1+1,:);res_t1e(:,4:5)=[];
-    %     res_t1ee=res_t(res_t(:,4)==t1+2,:);res_t1ee(:,4:5)=[];
-    res_t2=res_t(res_t(:,4)==t2,:);
-    res_t2(:,3:4)=[];
-    %     res_t2e=res_t(res_t(:,4)==t2+1,:);res_t2e(:,4:5)=[];
-    %     res_t2ee=res_t(res_t(:,4)==t2+2,:);res_t2ee(:,4:5)=[];
-    %     str_aver=0;
-    str_cor_t1=[res_t1(:,1:2)];
-    str_cor_t2=[res_t2(:,1:2)];
-    [str_out(i_t,:,:),D2(i_t,:)]=localstrain_NonAffine_mod(str_cor_t1,str_cor_t2,p_size*1.0);
+part_n=(size(res_t,1)/max_time); %the size of res_t / max_time is the number of total particles
+str_out=zeros(max_time,part_n,4); %create an empty array for strain (i.e. str_out); the 4 here refers to a 4-component strain tensor [xx, xy, yy, yx]
+
+D2=zeros(max_time,part_n); %create an empty array for non-affinitiey (i.e. D2)
+
+for i_t=2:max_time %start at frame = 2
+    
+    t2=i_t; %define the 'second' frame; this changes during the for-loop
+    
+    res_t1=res_t(res_t(:,4)==t2-1,:); %choose the res_t values for the frame "t2-1"
+    res_t1(:,4:5)=[]; %get rid of not needed variables
+    
+    res_t2=res_t(res_t(:,4)==t2,:); %choose the res_t values for the frame "t2"
+    res_t2(:,3:4)=[]; %get rid of not needed variables
+
+    
+    str_cor_t1=[res_t1(:,1:2)]; %basically just rename the x,y,z position of the particles to this variable name for the first frame
+    str_cor_t2=[res_t2(:,1:2)]; %basically just rename the x,y,z position of the particles to this variable name for the second frame
+    [str_out(i_t,:,:),D2(i_t,:)]=localstrain_2D(str_cor_t1,str_cor_t2,p_size); %This code calculate each particle's strain for the two frames
+   
+    
     
     %average strain over neighboring particles
-    
-    
-    
+       
     for i_n=1:part_n
-        p_d_local=sqrt((str_cor_t2(i_n,1)-str_cor_t2(:,1)).^2+(str_cor_t2(i_n,2)-str_cor_t2(:,2)).^2);%+(str_cor_t2(i_n,3)-str_cor_t2(:,3)).^2); %total distance
-        c_temp=p_d_local<=p_size*2;
-        str_out(i_t,i_n,:)=mean(str_out(i_t,c_temp,:),2);
-        D2(i_t,i_n)=mean(D2(i_t,c_temp),2);
+        p_d_local=sqrt((str_cor_t2(i_n,1)-str_cor_t2(:,1)).^2+(str_cor_t2(i_n,2)-str_cor_t2(:,2)).^2);%total distance
+        c_temp=p_d_local<=p_size*2; %determines neighbor particles within p_size
+        str_out(i_t,i_n,:)=mean(str_out(i_t,c_temp,:),2); %takes the mean values of strain for those neighbor particles
+        D2(i_t,i_n)=mean(D2(i_t,c_temp),2); %takes the mean values of non-affinity (D2) for those neighbor particles
     end
     
    
     
 end
-%% TOM ADDED 12-01-17
-%renumber each bead that last for the entire length of movie starting from
-%1 instead of whatever the original bead# was...
-% counter = 1;
-% res_t(1,6) = 1;
-% for i = 2:length(res_t);
-%     if res_t(i,5)~=res_t(i-1,5);
-%         counter = counter+1;
-%         res_t(i,6) = counter;
-%     else 
-%         res_t(i,6) = counter;
-%     end
-% end
+%% TOM ADDED 31-03-2020
+% Now add the strain components to the x, y, positions found in variable
+% 'res_t'...
 
+% Strain in 2D is a 4 component vector
 %new res_t strain component xx is column 6, xy col 7, etc...
 counter = 1;
-for n=1:size(str_out,2);
-   for t = 1:size(str_out,1);
+for n=1:size(str_out,2); %loop over number of particles
+   for t = 1:size(str_out,1); %loop over frame number 
        if  res_t(((n-1)*size(str_out,1))+t,5) == counter;
            res_t(((n-1)*size(str_out,1))+t,6) = str_out(t,n,1); % xx component
            res_t(((n-1)*size(str_out,1))+t,7) = str_out(t,n,2); % xy component
@@ -104,19 +99,17 @@ for n=1:size(str_out,2);
            res_t(((n-1)*size(str_out,1))+t,9) = str_out(t,n,4); % yy component
            res_t(((n-1)*size(str_out,1))+t,10) = D2(t,n); % non-affine
            
-           %display('good')
-           %pause(0.1)
+
        else
-           %display('error')
-           %pause(0.1)
-           counter = counter + 1; % skip bad particles
+           counter = counter + 1; % skip particle IDs that are missing from res_t(:,5)
        end
    end
    counter = counter+1;
 end
 
-
-% rearrange to time points into a new array for xy component
+%% Reduce data complexity
+% rearrange to time points into a new array of xy component, 4 strains,
+% and D2 called 'final'
 final = zeros(size(str_out,2),6,size(str_out,1)); % arrange as (1) x,(2) y, (3) strain xx (4) strain xy for each time
 for t = 1:size(str_out,1);
     counter = 1;
@@ -134,19 +127,10 @@ for t = 1:size(str_out,1);
     end
 end
 
-ypos = final(:,2,2);
-ypos = abs(ypos - max(ypos));
-final(:,2,2) = ypos;
 
-% Remove all zero elements of final
-[row_xy_strain,~]=find(final(:,3,2));
-%
-final_nonzero(:,1,2) = final(row_xy_strain,1,2);
-final_nonzero(:,2,2) = final(row_xy_strain,2,2);
-final_nonzero(:,3,2) = final(row_xy_strain,3,2);
-final_nonzero(:,4,2) = final(row_xy_strain,4,2);
-final_nonzero(:,5,2) = final(row_xy_strain,5,2);
-final_nonzero(:,6,2) = final(row_xy_strain,6,2);
-final_nonzero(:,7,2) = final(row_xy_strain,7,2);
-%
+%% Time to make a plots...
+frame = 50;
+scatter(final(:,1,frame), final(:,2,frame), 20 , final(:,4,frame),'filled'); %this will make a scatter plot of x-, y- positions, with each point having a size = 20, and color of th xy strain component for only one frame
+
+
 
