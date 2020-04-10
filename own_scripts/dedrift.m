@@ -20,9 +20,9 @@ res_yes = [res(:,1),res(:,2),res(:,6),res(:,8)]; %remove irrelevant values
 % OUTPUT: []
 
 sortFOV = sortrows(res_yes, 3); %sorts the matrix to allow easy selection of frame i
-corMatrix = zeros(length(sortFOV), 2); %create array to hold subtracted averages
+corMatrix = zeros(length(res_yes), 2); %create array to hold subtracted averages
 
-maxFOV = max(sortFOV(:,3)); %gives final frame for defining for loop below
+maxFOV = max(res_yes(:,3)); %gives final frame for defining for loop below
 
 meanX = zeros(1, maxFOV);
 meanY = zeros(1, maxFOV);
@@ -36,8 +36,8 @@ for i = 1:maxFOV
     X = sortFOV(minRow:maxRow,1); %extracts x-values belonging to frame i
     Y = sortFOV(minRow:maxRow,2); %same as above for y-values
 
-    meanX(i) = mean(X); %calculates average x-position
-    meanY(i) = mean(Y); %calculates average Y-position
+    meanX(i) = median(X); %calculates average x-position
+    meanY(i) = median(Y); %calculates average Y-position
     
     if i == 1
         corMeanX(1) = 0;
@@ -58,18 +58,24 @@ corRes_yes = sortrows(corSortFOV,4); % sorted by beadID again
 % Plots 50 particles as a function of frame for both pre-driftcorrection
 % (figure 1) and post-driftcorrection (figure 2)
 figure
+subplot(1, 2, 1);
 plot([1:maxFOV], corMeanX); hold on;
-plot([1:maxFOV], corMeanY); hold on;
+plot([1:maxFOV], corMeanY); 
+subplot(1, 2, 2);
+plot(meanX, meanY);
 
 
 figure %pre-correction
-p = 5;% particles to plot
-for m=1:p
+subplot(1, 2, 1);
+ps = 1;% particles to plot
+pe = 50;
+for m=ps:pe
     FOV = find(res(:,8) == m);
     plot(res(min(FOV):max(FOV), 1), res(min(FOV):max(FOV), 2)); hold on;
 end
-figure %post-correction
-for m=1:p
+%post-correction
+subplot(1, 2, 2);
+for m=ps:pe
     FOV = find(res(:,8) == m);
     plot(corRes_yes(min(FOV):max(FOV), 1), corRes_yes(min(FOV):max(FOV), 2)); hold on;
 end

@@ -54,6 +54,7 @@ fancytrack( basepath, fovn, featsize, maxdisp, goodenough, memory ) %all inputs 
 %%
 load('D:\Uni\ASM\data\Bead_tracking\res_files\res_fov1.mat')
 % Plot 50 of those particles
+figure
 for m=1:50
     plot(res((1+(79*(m-1))):(79*m),1),res((1+(79*(m-1))):(79*m),2)); hold on;
 end
