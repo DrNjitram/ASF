@@ -22,14 +22,14 @@ res_yes = [res(:,1),res(:,2),res(:,6),res(:,8)]; %remove irrelevant values
 sortFOV = sortrows(res_yes, 3); %sorts the matrix to allow easy selection of frame i
 corMatrix = zeros(length(res_yes), 2); %create array to hold subtracted averages
 
-maxFOV = max(res_yes(:,3)); %gives final frame for defining for loop below
+frame_number = max(res_yes(:,3)); %gives final frame for defining for loop below
 
-meanX = zeros(1, maxFOV);
-meanY = zeros(1, maxFOV);
-corMeanX = zeros(1, maxFOV);
-corMeanY = zeros(1, maxFOV);
+meanX = zeros(1, frame_number);
+meanY = zeros(1, frame_number);
+corMeanX = zeros(1, frame_number);
+corMeanY = zeros(1, frame_number);
 
-for i = 1:maxFOV
+for i = 1:frame_number
     FOV = find(sortFOV(:,3) == i); %gives vector containing every row belonging to frame i
     maxRow = max(FOV);
     minRow = min(FOV);
@@ -54,16 +54,42 @@ end
 corSortFOV = [sortFOV(:,1:2)- corMatrix(:,1:2),sortFOV(:,3:4)]; %subtracts the correction value from the original positions to give the drift corrected positions
 corRes_yes = sortrows(corSortFOV,4); % sorted by beadID again
 
+%% Fit linear equations
+
+%form drift = a*frame_no + b
+frames = 1:frame_number;
+
+[~, values_a] = fit_linear(corMeanX, frames, 3);
+x_fit = values_a(1) * frames + values_a(2);
+x_fit_func = @(x) values_a(1) * x + values_a(2);
+
+[~, values_b] = fit_linear(corMeanY, frames, 3);
+y_fit = values_b(1) * frames + values_b(2);
+y_fit_func = @(x) values_b(1) * x + values_b(2);
+
+%% Apply linear equations
+res_correction = [x_fit_func(res(:, 6)), y_fit_func(res(:, 6))];
+res_dedrifted = res;
+res_dedrifted(:, 1:2) = res_dedrifted(:, 1:2) - res_correction;
+
 %% Next step: Show the movement plots of particles (Tom's code)
 % Plots 50 particles as a function of frame for both pre-driftcorrection
 % (figure 1) and post-driftcorrection (figure 2)
 figure
 subplot(1, 2, 1);
-plot([1:maxFOV], corMeanX); hold on;
-plot([1:maxFOV], corMeanY); 
+plot(frames, corMeanX); hold on;
+plot(frames, corMeanY); hold on;
+plot(frames, x_fit); hold on;
+plot(frames, y_fit); 
+xlabel("Frame Number");
+ylabel("Drift (px)");
+legend("X drift", "Y drift", "X fit", "Y fit");
 subplot(1, 2, 2);
-plot(meanX, meanY);
-
+plot(meanX, meanY); hold on;
+plot(meanX(1) + x_fit,meanY(1) + y_fit);
+xlabel("X Drift (px)");
+ylabel("Y Drift (px)");
+legend("XY drift", "fit");
 
 figure %pre-correction
 subplot(1, 2, 1);
@@ -73,9 +99,15 @@ for m=ps:pe
     FOV = find(res(:,8) == m);
     plot(res(min(FOV):max(FOV), 1), res(min(FOV):max(FOV), 2)); hold on;
 end
+xlabel("X");
+ylabel("Y");
+title("Raw Position Data");
 %post-correction
 subplot(1, 2, 2);
 for m=ps:pe
     FOV = find(res(:,8) == m);
-    plot(corRes_yes(min(FOV):max(FOV), 1), corRes_yes(min(FOV):max(FOV), 2)); hold on;
+    plot(res_dedrifted(min(FOV):max(FOV), 1), res_dedrifted(min(FOV):max(FOV), 2)); hold on;
 end
+xlabel("X");
+ylabel("Y");
+title("Dedrifted Position Data");

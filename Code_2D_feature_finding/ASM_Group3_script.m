@@ -44,6 +44,7 @@ scatter(MT(1:(frames(1)-1),1),MT(1:(frames(1)-1),2),'*k');
 xbias = mod(MT(:,1),1); %find using modulus, find the remainder
 ybias = mod(MT(:,2),1); 
 
+figure
 histogram(xbias,10,'FaceColor','r'); hold on;
 histogram(ybias,10,'FaceColor','m');
 %%
