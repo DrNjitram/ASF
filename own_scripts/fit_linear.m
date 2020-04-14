@@ -2,7 +2,7 @@ function [remainder, values] = fit_linear(dataset, x, limit)
     if nargin < 4; limit = 3; end
     
     guess_ax = (max(dataset)-min(dataset))/length(x);
-    guess_bx = dataset(fix(length(x)/2))-fix(length(x)/2)*guess_ax;
+    guess_bx = dataset(floor(length(x)/2))-floor(length(x)/2)*guess_ax;
 
     drifta = @(a, x) a*x + guess_bx;
     [~, a] = find_min(drifta, x, guess_ax, [0, 10], dataset);

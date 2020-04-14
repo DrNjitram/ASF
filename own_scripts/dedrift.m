@@ -59,11 +59,11 @@ corRes_yes = sortrows(corSortFOV,4); % sorted by beadID again
 %form drift = a*frame_no + b
 frames = 1:frame_number;
 
-[~, values_a] = fit_linear(corMeanX, frames, 3);
+[~, values_a] = fit_linear(corMeanX, frames);
 x_fit = values_a(1) * frames + values_a(2);
 x_fit_func = @(x) values_a(1) * x + values_a(2);
 
-[~, values_b] = fit_linear(corMeanY, frames, 3);
+[~, values_b] = fit_linear(corMeanY, frames);
 y_fit = values_b(1) * frames + values_b(2);
 y_fit_func = @(x) values_b(1) * x + values_b(2);
 
@@ -91,7 +91,8 @@ xlabel("X Drift (px)");
 ylabel("Y Drift (px)");
 legend("XY drift", "fit");
 
-figure %pre-correction
+figure 
+%pre-correction
 subplot(1, 2, 1);
 ps = 1;% particles to plot
 pe = 50;
@@ -102,12 +103,14 @@ end
 xlabel("X");
 ylabel("Y");
 title("Raw Position Data");
+
 %post-correction
 subplot(1, 2, 2);
 for m=ps:pe
     FOV = find(res(:,8) == m);
     plot(res_dedrifted(min(FOV):max(FOV), 1), res_dedrifted(min(FOV):max(FOV), 2)); hold on;
 end
+
 xlabel("X");
 ylabel("Y");
 title("Dedrifted Position Data");
