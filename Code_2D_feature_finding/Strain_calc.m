@@ -8,11 +8,12 @@ function [final] = Strain_calc(res)
 % strain
 
 % rearrange the 'res' matrix to comply with strain calculation's format
-MTedge = [res(:,1),res(:,2),res(:,3),res(:,7),res(:,8)];
+MTedge = [res(:,1),res(:,2),res(:,3),res(:,6),res(:,8)];
 % now go forward with this code
 t1=1;
 frame_time = 4.2; %change this as necessary
 incremental=1;
+
 %% Choose region of interest
 cutedge_p=0; %choose a number of pixels to ignore from the edges of the image; now set to include the entire image
 x_min=cutedge_p;
@@ -31,15 +32,16 @@ MTtrack=MTtrack(MTtrack(:,2)>y_min&MTtrack(:,2)<y_max,:);
 
 % Modify for 2D
 MTtrack(:,3) = 1;
-MTtrack(:,4) = ceil(MTtrack(:,4)./frame_time); %change the real time in second into frame number as this makes the next 50 lines easier to code in whole integers; use 'ceil' to round to next highest integer
+%MTtrack(:,4) = res(:, 6); %change the real time in second into frame number as this makes the next 50 lines easier to code in whole integers; use 'ceil' to round to next highest integer
 max_time=max(MTtrack(:,4)); %Note: MTtrack(:,4) == res(:,7)
+
 %% Chose only the particles with full life cycle in the chosen region
 % If you set 'goodenough' equal to the full number of frames, this code is
 % not important, but run it still as the variable names change. 
 res_t=[];
 res_fig = MTtrack;
 for i_n=1:max(res_fig(:,5)) %Note: res_fig(:,5) are BeadID, so i_n goes from 1 to max(BeadIDs)
-    if size(res_fig(res_fig(:,5)==i_n),1)>=(max_time); %use if to select only particles with frames = max_frame
+    if size(res_fig(res_fig(:,5)==i_n),1)>=(max_time) %use if to select only particles with frames = max_frame
         res_t=[res_t;res_fig(res_fig(:,5)==i_n,:)]; %make that selection, ignore all other BeadID; store as new variable "res_t". the first part of this line that say [res(t)...] causes it to grow each loop
     end
 end
@@ -90,9 +92,9 @@ end
 % Strain in 2D is a 4 component vector
 %new res_t strain component xx is column 6, xy col 7, etc...
 counter = 1;
-for n=1:size(str_out,2); %loop over number of particles
-   for t = 1:size(str_out,1); %loop over frame number 
-       if  res_t(((n-1)*size(str_out,1))+t,5) == counter;
+for n=1:size(str_out,2) %loop over number of particles
+   for t = 1:size(str_out,1) %loop over frame number 
+       if  res_t(((n-1)*size(str_out,1))+t,5) == counter
            res_t(((n-1)*size(str_out,1))+t,6) = str_out(t,n,1); % xx component
            res_t(((n-1)*size(str_out,1))+t,7) = str_out(t,n,2); % xy component
            res_t(((n-1)*size(str_out,1))+t,8) = str_out(t,n,3); % yx component
@@ -111,10 +113,10 @@ end
 % rearrange to time points into a new array of xy component, 4 strains,
 % and D2 called 'final'
 final = zeros(size(str_out,2),6,size(str_out,1)); % arrange as (1) x,(2) y, (3) strain xx (4) strain xy for each time
-for t = 1:size(str_out,1);
+for t = 1:size(str_out,1)
     counter = 1;
-    for k=1:size(res_t,1);
-        if res_t(k,4)==t;
+    for k=1:size(res_t,1)
+        if res_t(k,4)==t
             final(counter,1,t)=res_t(k,1); % x location
             final(counter,2,t)=res_t(k,2); % y location
             final(counter,3,t)=res_t(k,6); % xx strain
@@ -129,8 +131,29 @@ end
 
 
 %% Time to make a plots...
-frame = 50;
-scatter(final(:,1,frame), final(:,2,frame), 20 , final(:,4,frame),'filled'); %this will make a scatter plot of x-, y- positions, with each point having a size = 20, and color of th xy strain component for only one frame
+%frame = 78;
+%scatter(res(res(:,7)==frame, 1), res(res(:,7)==frame, 2), 20, zeros(length(res(res(:,7)==frame, 1)), 1));
+%scatter(final(:,1,frame), final(:,2,frame), 20 , final(:,4,frame),'filled'); hold on; %this will make a scatter plot of x-, y- positions, with each point having a size = 20, and color of th xy strain component for only one frame
 
+h = figure;
+axis tight manual % this ensures that getframe() returns a consistent size
+filename = 'strain.gif';
+for n = 1:max_time
+    % Draw plot for y = x.^n
 
+    scatter(final(:,1,n), final(:,2,n), 20 , final(:,4,n),'filled');
+    colorbar;
+    caxis([min(min(final(:, 4, :))), max(max(final(:, 4, :)))]);
+    drawnow 
+      % Capture the plot as an image 
+      frame = getframe(h); 
+      im = frame2im(frame); 
+      [imind,cm] = rgb2ind(im,256); 
+      % Write to the GIF File 
+      if n == 1 
+          imwrite(imind,cm,filename,'gif', 'Loopcount',inf); 
+      else 
+          imwrite(imind,cm,filename,'gif','WriteMode','append'); 
+      end 
+end
 

@@ -48,7 +48,7 @@ for i = 1:num_images
     fprintf(repmat('\b',1,linelength));
     linelength = fprintf('%d of %d', i, num_images);
     
-    r{i} = feature2D(images{i}, fovn, featsize, masscut);
+    r{i} = feature2D(images{i}, fovn, featsize, masscut, barrI);
 end
 fprintf('\n\n');
 

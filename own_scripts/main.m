@@ -1,4 +1,5 @@
-clear variables
+%clear variables
+close all
 
 % Global variables
 frametime = 4.2; %s
@@ -26,3 +27,7 @@ IdivRg = barint/barrg;
 mpretrack(basepath, fovn, featsize, barint, barrg, barcc, IdivRg, numframes, masscut);
 
 fancytrack(basepath, FOV, featsize, 2, 70, 1);
+
+dedrifted = dedrift(false);
+
+final = Strain_calc(dedrifted);
