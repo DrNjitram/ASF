@@ -31,3 +31,14 @@ fancytrack(basepath, FOV, featsize, 2, 70, 1);
 dedrifted = dedrift(false);
 
 final = Strain_calc(dedrifted);
+
+%% Plot process zone for frames of interest
+final = final;  %the xx xy yy yx strain matrix
+t = 7;          %the frame you want to see
+strain_type = 3;%choose 3/4/5/6: 3 = xx; 4 = xy; 5 = yy 6 = yx
+strain_cut = 0; %choose from below which strain value you want to exclude particles
+
+calc_processZone(final,t,strain_type,strain_cut);
+
+% create gif/video of all frames(if time allows)
+% for i = time   
