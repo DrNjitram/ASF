@@ -1,4 +1,4 @@
-function [final] = Strain_calc(res, p_size, fig)
+function [final] = Strain_calc(res, p_size, fig, type)
 % Under 'Bead_tracking/res_files' find the .mat file that contains all the
 % tracks. Load this data first.
 % This code was written for 3D data and has been adapted to your 2D data
@@ -6,7 +6,7 @@ function [final] = Strain_calc(res, p_size, fig)
 % Most of this code is about rearranging data to consider only the
 % neightbors of the target particle from which to calculate the local
 % strain
-
+fprintf('Calculating Strain:\n');
 % rearrange the 'res' matrix to comply with strain calculation's format
 MTedge = [res(:,1),res(:,2),res(:,3),res(:,6),res(:,8)];
 % now go forward with this code
@@ -40,12 +40,17 @@ max_time=max(MTtrack(:,4)); %Note: MTtrack(:,4) == res(:,7)
 % not important, but run it still as the variable names change. 
 res_t=[];
 res_fig = MTtrack;
-for i_n=1:max(res_fig(:,5)) %Note: res_fig(:,5) are BeadID, so i_n goes from 1 to max(BeadIDs)
+fprintf('Selecting Features ');
+linelength = 0;
+targ = max(res_fig(:,5)); 
+for i_n=1:targ %Note: res_fig(:,5) are BeadID, so i_n goes from 1 to max(BeadIDs)
+    fprintf(repmat('\b',1,linelength));
+    linelength = fprintf('%d of %d', i_n, targ );
     if size(res_fig(res_fig(:,5)==i_n),1)>=(max_time) %use if to select only particles with frames = max_frame
         res_t=[res_t;res_fig(res_fig(:,5)==i_n,:)]; %make that selection, ignore all other BeadID; store as new variable "res_t". the first part of this line that say [res(t)...] causes it to grow each loop
     end
 end
-
+fprintf('\n');
 
 %% Choose the same particles at different times and calculat the strain
 % this takes some time as there are many frames and many particles
@@ -56,7 +61,7 @@ str_out=zeros(max_time,part_n,4); %create an empty array for strain (i.e. str_ou
 
 D2=zeros(max_time,part_n); %create an empty array for non-affinitiey (i.e. D2)
 
-fprintf('Calculating Strain:\nProcessing frame ');
+fprintf('Processing frame ')
 linelength = 0;
 for i_t=2:max_time %start at frame = 2
     fprintf(repmat('\b',1,linelength));
@@ -129,6 +134,8 @@ for t = 1:size(str_out,1)
             final(counter,5,t)=res_t(k,8); % yx strain
             final(counter,6,t)=res_t(k,9); % yy strain
             final(counter,7,t)=res_t(k,10); % non-affine
+            final(counter,8,t)=res_t(k,6)+res_t(k,7)+res_t(k,8)+res_t(k,9); % all combined
+            final(counter,9,t)=res_t(k,7)+res_t(k,8); %diagonals
             counter = counter+1;
         end
     end
@@ -144,11 +151,11 @@ if fig
     axis tight manual % this ensures that getframe() returns a consistent size
     filename = 'strain.gif';
     for n = 1:max_time
-        % Draw plot for y = x.^n
 
-        scatter(final(:,1,n), -1*final(:,2,n), 20 , final(:,4,n),'filled');
+
+        scatter(final(:,1,n), -1*final(:,2,n), 20 , final(:,type,n),'filled');
         colorbar;
-        caxis([min(min(final(:, 4, :))), max(max(final(:, 4, :)))]);
+        caxis([-0.05, 0.05]);
         drawnow 
           % Capture the plot as an image 
           frame = getframe(h); 
