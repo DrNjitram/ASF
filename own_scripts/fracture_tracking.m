@@ -72,8 +72,8 @@ remainder_x = [];
 remainder_y = [];
 
 for i = 1:num_images
-    remainder_x = [remainder_x, std(mod(r{i}(:,1), 1)')];
-    remainder_y = [remainder_y, std(mod(r{i}(:,2), 1)')];
+    remainder_x = [remainder_x, mod(r{i}(:,1), 1)'];
+    remainder_y = [remainder_y, mod(r{i}(:,2), 1)'];
 end
 
 %% Imaging

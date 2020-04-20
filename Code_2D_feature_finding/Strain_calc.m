@@ -1,4 +1,4 @@
-function [final] = Strain_calc(res)
+function [final] = Strain_calc(res, p_size, fig)
 % Under 'Bead_tracking/res_files' find the .mat file that contains all the
 % tracks. Load this data first.
 % This code was written for 3D data and has been adapted to your 2D data
@@ -49,14 +49,18 @@ end
 
 %% Choose the same particles at different times and calculat the strain
 % this takes some time as there are many frames and many particles
-p_size=10; %average distance between neighboring particles in pixels; choose a value much greater than diameter; this is an input to the strain code
+%p_size=10; %average distance between neighboring particles in pixels; choose a value much greater than diameter; this is an input to the strain code
 
 part_n=(size(res_t,1)/max_time); %the size of res_t / max_time is the number of total particles
 str_out=zeros(max_time,part_n,4); %create an empty array for strain (i.e. str_out); the 4 here refers to a 4-component strain tensor [xx, xy, yy, yx]
 
 D2=zeros(max_time,part_n); %create an empty array for non-affinitiey (i.e. D2)
 
+fprintf('Calculating Strain:\nProcessing frame ');
+linelength = 0;
 for i_t=2:max_time %start at frame = 2
+    fprintf(repmat('\b',1,linelength));
+    linelength = fprintf('%d of %d', i_t, max_time);
     
     t2=i_t; %define the 'second' frame; this changes during the for-loop
     
@@ -85,6 +89,7 @@ for i_t=2:max_time %start at frame = 2
    
     
 end
+fprintf('\n\n');
 %% TOM ADDED 31-03-2020
 % Now add the strain components to the x, y, positions found in variable
 % 'res_t'...
@@ -134,26 +139,26 @@ end
 %frame = 78;
 %scatter(res(res(:,7)==frame, 1), res(res(:,7)==frame, 2), 20, zeros(length(res(res(:,7)==frame, 1)), 1));
 %scatter(final(:,1,frame), final(:,2,frame), 20 , final(:,4,frame),'filled'); hold on; %this will make a scatter plot of x-, y- positions, with each point having a size = 20, and color of th xy strain component for only one frame
+if fig
+    h = figure;
+    axis tight manual % this ensures that getframe() returns a consistent size
+    filename = 'strain.gif';
+    for n = 1:max_time
+        % Draw plot for y = x.^n
 
-h = figure;
-axis tight manual % this ensures that getframe() returns a consistent size
-filename = 'strain.gif';
-for n = 1:max_time
-    % Draw plot for y = x.^n
-
-    scatter(final(:,1,n), final(:,2,n), 20 , final(:,4,n),'filled');
-    colorbar;
-    caxis([min(min(final(:, 4, :))), max(max(final(:, 4, :)))]);
-    drawnow 
-      % Capture the plot as an image 
-      frame = getframe(h); 
-      im = frame2im(frame); 
-      [imind,cm] = rgb2ind(im,256); 
-      % Write to the GIF File 
-      if n == 1 
-          imwrite(imind,cm,filename,'gif', 'Loopcount',inf); 
-      else 
-          imwrite(imind,cm,filename,'gif','WriteMode','append'); 
-      end 
+        scatter(final(:,1,n), -1*final(:,2,n), 20 , final(:,4,n),'filled');
+        colorbar;
+        caxis([min(min(final(:, 4, :))), max(max(final(:, 4, :)))]);
+        drawnow 
+          % Capture the plot as an image 
+          frame = getframe(h); 
+          im = frame2im(frame); 
+          [imind,cm] = rgb2ind(im,256); 
+          % Write to the GIF File 
+          if n == 1 
+              imwrite(imind,cm,filename,'gif', 'Loopcount',inf); 
+          else 
+              imwrite(imind,cm,filename,'gif','WriteMode','append'); 
+          end 
+    end
 end
-

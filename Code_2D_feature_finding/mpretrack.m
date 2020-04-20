@@ -1,4 +1,4 @@
-function[] = mpretrack(basepath,fovn,featuresize,barrI,barrRg,barrCc,IdivRg,numframes,masscut,Imin,field)
+function [MT] = mpretrack(basepath,s, fovn,featuresize,barrI,barrRg,barrCc,IdivRg,numframes,masscut,Imin,field)
 
 % This program should be used when you have determined the values of its
 % parameters using mpretrack_init. The calling sequence is
@@ -60,9 +60,9 @@ function[] = mpretrack(basepath,fovn,featuresize,barrI,barrRg,barrCc,IdivRg,numf
 % Iint to Rg parameter
 % 12/21/07 Maria -- added optional field
 
-if nargin < 11, field = 2;, end
-if nargin < 10, Imin = 0;, end
-if nargin < 9, masscut = 0; end
+if nargin < 12, field = 2; end
+if nargin < 11, Imin = 0; end
+if nargin < 10, masscut = 0; end
 
 tic,
 
@@ -72,10 +72,10 @@ pathout = [pathin 'Feature_finding/'];
 
 d=0;
 load([pathin 'fov' num2str(fovn) '_times.mat']);
-fprintf('Processing images:\nProcessing frame ');
+fprintf('Finding Features:\nProcessing frame ');
 linelength = 0;
 for x = 1:numframes
-    strnam=[pathin 'fov' num2str(fovn) '/fov' num2str(fovn) '_' num2str(x,'%04i') '.tif'];
+    strnam=[pathin 'fov' num2str(fovn) '/fov' num2str(fovn) '_' num2str(x+s-1,'%04i') '.tif'];
     img=imread(strnam);
 %     if Inv == 1
 %         img=255-img;
@@ -120,7 +120,7 @@ for x = 1:numframes
     clear i;
     clear j;
 end
-fprintf('\n');
+fprintf('\n\n');
 
 format long e;
 % if Inv == 0
@@ -134,4 +134,4 @@ copyfile( strnam, [pathout 'fov' num2str(fovn) '_last.tif'] );
 clear all;
 format short;
 
-disp(['The program ran for ' num2str(toc/60) ' minutes'])
+%disp(['The program ran for ' num2str(toc/60) ' minutes'])

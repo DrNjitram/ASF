@@ -1,4 +1,4 @@
-function [ ] = fancytrack( basepath, FOVnum, featsize, maxdisp, goodenough, memory )
+function [] = fancytrack( basepath, FOVnum, featsize, maxdisp, goodenough, memory)
 
 % Runs trackmem on the output from mpretrack. 
 %

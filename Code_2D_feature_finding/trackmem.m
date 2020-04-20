@@ -394,11 +394,11 @@ for i=istart+1:z %always starts at 2 (while inipos not implemented)
                     rnsteps = 1;
                     for ii = 1:nnew
                         rnsteps = rnsteps * length( find( bonds(:,2) == unew(ii) ) );
-                        if rnsteps > 5e+4
+                        if rnsteps > 10* 5e+4
                             warning( ' Warning: difficult combinatorics encountered.')
                             warning( ' Program may not finish- Try reducing maxdisp.')
                         end
-                        if rnsteps > 2e+5, warning(' Excessive Combinatorics! Try reducing maxdisp.'), end
+                        if rnsteps >10* 2e+5, warning(' Excessive Combinatorics! Try reducing maxdisp.'), end
                     end
                 end
                 st = ones( 1,nnew );, fi = ones( 1,nnew );

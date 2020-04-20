@@ -1,4 +1,4 @@
-function res_dedrifted = dedrift(fig)
+function res_dedrifted = dedrift(basepath, fig)
     %% Driftcorrection
 
     % INPUT
@@ -9,8 +9,7 @@ function res_dedrifted = dedrift(fig)
     % OUTPUT
     % 
     % 
-
-    load('res_fov1.mat') %load relevant data file
+    load( [basepath 'Bead_tracking/res_files/res_fov1.mat'] ); %load relevant data file
     res_yes = [res(:,1),res(:,2),res(:,6),res(:,8)]; %remove irrelevant values
 
     %% drift correction based on average positions
@@ -21,13 +20,19 @@ function res_dedrifted = dedrift(fig)
     corMatrix = zeros(length(res_yes), 2); %create array to hold subtracted averages
 
     frame_number = max(res_yes(:,3)); %gives final frame for defining for loop below
+    start_frame = min(res_yes(:,3)); % give the start frame
 
     meanX = zeros(1, frame_number);
     meanY = zeros(1, frame_number);
     corMeanX = zeros(1, frame_number);
     corMeanY = zeros(1, frame_number);
 
-    for i = 1:frame_number
+    fprintf('Dedrifting images:\nProcessing frame ');
+    linelength = 0;   
+    for i = start_frame:frame_number
+        fprintf(repmat('\b',1,linelength));
+        linelength = fprintf('%d of %d', i-start_frame+1, frame_number-start_frame+1);
+    
         FOV = find(sortFOV(:,3) == i); %gives vector containing every row belonging to frame i
         maxRow = max(FOV);
         minRow = min(FOV);
@@ -48,12 +53,11 @@ function res_dedrifted = dedrift(fig)
         corMatrix(minRow:maxRow,1) = corMeanX(i); %puts the x-values we use for correction at the correct place
         corMatrix(minRow:maxRow,2) = corMeanY(i); %same as above for y-values
     end
-
+    fprintf('\n\n');
     corSortFOV = [sortFOV(:,1:2)- corMatrix(:,1:2),sortFOV(:,3:4)]; %subtracts the correction value from the original positions to give the drift corrected positions
     corRes_yes = sortrows(corSortFOV,4); % sorted by beadID again
 
     %% Fit linear equations
-
     %form drift = a*frame_no + b
     frames = 1:frame_number;
 
